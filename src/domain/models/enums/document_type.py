@@ -1,0 +1,10 @@
+from enum import Enum
+
+
+class DocumentType(Enum):
+    POLICY = "POLICY"
+    APPRAISAL = "APPRAISAL"
+    DEFAULT = "DEFAULT"
+    REGISTRATION = "REGISTRATION"
+    REGULATORY = "REGULATORY"
+    INTERNAL = "INTERNAL"
