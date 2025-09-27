@@ -34,6 +34,7 @@ class S3PollerDocument(PollerDocumentPort):
                 file_name = os.path.basename(rel_path)
                 # Se intenta parsear mes y año
                 try:
+
                     period_month, period_year = folder.split(" ")
                 except Exception as e:
                     print(f"Error en get_file_names {str(e)}")

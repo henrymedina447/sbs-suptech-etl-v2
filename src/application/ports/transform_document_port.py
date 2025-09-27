@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABC
-from domain.models.states.etl_inscripciones_state import EtlInscripcionesState
+from domain.models.states.etl_inscripciones_state import EtlInscripcionesState, EtlInscripcionChild
 from domain.models.states.etl_polizas_state import EtlPolizasState
 from domain.models.states.etl_tasaciones_state import EtlTasacionesState
 
@@ -11,7 +11,7 @@ class TransformDocumentPort(ABC):
         ...
 
     @abstractmethod
-    def llm_caller_inscripciones(self, **kwargs) -> EtlInscripcionesState | None:
+    def llm_caller_inscripciones(self, **kwargs) -> EtlInscripcionChild | None:
         ...
 
     @abstractmethod

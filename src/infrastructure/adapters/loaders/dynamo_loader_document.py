@@ -27,13 +27,14 @@ class DynamoLoaderDocument(LoaderDocumentPort):
         )
         return dynamo_resource.Table(self.app_settings.table_settings.si_table)
 
-    def save_metadata(self, document_type: str, data: EtlBaseState) -> None:
-        metadata = data.model_dump(mode="json")
-        metadata["document_type"] = document_type
-        item = {
-            "id": str(uuid.uuid4()),
-            "metadata": metadata
-        }
-        self.table.put_item(Item=item)
+    def save_metadata(self, document_type: str, data: list[EtlBaseState]) -> None:
+        for d in data:
+            metadata = d.model_dump(mode="json")
+            metadata["document_type"] = document_type
+            item = {
+                "id": str(uuid.uuid4()),
+                "metadata": metadata
+            }
+            self.table.put_item(Item=item)
 
 

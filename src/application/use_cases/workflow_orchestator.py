@@ -6,6 +6,7 @@ from application.ports.extractor_document_port import ExtractorDocumentPort
 from application.ports.loader_document_port import LoaderDocumentPort
 from application.ports.poller_document_port import PollerDocumentPort
 from application.ports.transform_document_port import TransformDocumentPort
+from application.use_cases.workflows.workflow_inscripciones import WorkflowInscripciones
 from application.use_cases.workflows.workflow_polizas import WorkflowPolizas
 from domain.models.enums.prefix_enum import PrefixEnum
 from domain.models.states.document_contract_state import DocumentContractState
@@ -26,6 +27,7 @@ class WorkflowOrchestator:
         self._loader = loader
         self._poller = poller
         self.polizas_wf = WorkflowPolizas(self._extractor, self._transformer, self._loader)
+        self.inscripciones_wf = WorkflowInscripciones(self._extractor, self._transformer, self._loader)
         self.app_settings: AppSettings = get_app_settings()
         self._graph = self._build()
 
@@ -43,9 +45,10 @@ class WorkflowOrchestator:
 
     def _select_flow(self, state: EtlOrchestatorState) -> Literal["póliza", "inscripción", "tasación"]:
         flow = state.prefix.value
-        if flow == "Inscripcion":
+        print("flow", flow)
+        if flow == "Inscripciones/":
             return "inscripción"
-        elif flow == "Tasacion":
+        elif flow == "Tasaciones/":
             return "tasación"
         else:
             return "póliza"
@@ -64,7 +67,17 @@ class WorkflowOrchestator:
             return {}
 
     async def _inscripciones_flow(self, state: EtlOrchestatorState) -> dict[str, Any]:
-        return {}
+        try:
+            total_documents: list[DocumentContractState] = state.documents_with_contract
+            if not total_documents:
+                return {}
+            for index, doc in enumerate(total_documents):
+                print(f"Ejecutando documento: {index + 1}")
+                await self.inscripciones_wf.execute(doc)
+            return {}
+        except Exception as e:
+            self.logger.error(f"Error en inscripciones_flow: {str(e)}")
+            return {}
 
     async def _tasaciones_flow(self, state: EtlOrchestatorState) -> dict[str, Any]:
         return {}

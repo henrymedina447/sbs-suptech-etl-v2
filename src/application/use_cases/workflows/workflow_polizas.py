@@ -10,6 +10,8 @@ from domain.models.states.etl_base_state import EtlBaseState
 from domain.models.states.etl_polizas_state import EtlPolizasState
 import anyio
 
+from domain.services.workflow_service import WorkflowService
+
 
 class WorkflowPolizas(WorkflowBase):
 
@@ -22,30 +24,31 @@ class WorkflowPolizas(WorkflowBase):
         self.logger = logging.getLogger("app.workflows")
         self.document_data: DocumentContractState | None = None
 
-    async def _extract(self, state: EtlBaseState) -> dict[str, Any]:
+    async def _extract(self, state: EtlPolizasState) -> dict[str, Any]:
         try:
+            items: list[EtlBaseState] = await self._extractor.extract_pipeline(document_data=self.document_data,
+                                                                               origin="polizas")
 
-            item: EtlBaseState | None = await anyio.to_thread.run_sync(
-                self._extractor.extract_pipeline,
-                self.document_data,
-                "polizas"
-            )
-            if item is None:
+            if len(items) == 0:
                 return {
                     "extract_success": False
                 }
+            item = items[0]
             return {
                 "extract_success": True,
+                "document_name": self.document_data.document_name,
+                "period_month": WorkflowService.refine_month(self.document_data.period_month),
+                "period_year": WorkflowService.refine_year(self.document_data.period_year),
                 "document_content_total": item.document_content_total,
                 "document_content_llm": item.document_content_llm
             }
         except Exception as e:
-            self.logger.error(f"Error en extracción: {str(e)}")
+            self.logger.error(f"Error en extracción de pólizas: {str(e)}")
             return {
                 "extract_success": False
             }
 
-    async def _transform(self, state: EtlBaseState) -> dict[str, Any]:
+    async def _transform(self, state: EtlPolizasState) -> dict[str, Any]:
         try:
             extract_success = state.extract_success
             if not extract_success:
@@ -63,21 +66,22 @@ class WorkflowPolizas(WorkflowBase):
                 "transform_success": True,
                 "policy_number": item.policy_number,
                 "policy_name": item.policy_name,
-                "policy_start_date": item.policy_start_date,
-                "policy_end_date": item.policy_end
+                "policy_start_date": WorkflowService.refine_dates(item.policy_start_date),
+                "policy_end_date": WorkflowService.refine_dates(item.policy_end_date)
             }
         except Exception as e:
-            self.logger.info(f"Error en transformación: {str(e)}")
+            self.logger.error(f"Error en transformación de pólizas: {str(e)}")
             return {
                 "transform_success": False
             }
 
-    async def _load(self, state: EtlBaseState) -> dict[str, Any]:
+    async def _load(self, state: EtlPolizasState) -> dict[str, Any]:
         try:
+            self.logger.info("Iniciando el proceso de carga de pólizas")
             transform_success = state.transform_success
             if not transform_success:
                 return {}
-            await anyio.to_thread.run_sync(self._loader.save_metadata, "polizas", state)
+            await anyio.to_thread.run_sync(self._loader.save_metadata, "polizas", [state])
             return {
                 "load_success": True
             }
@@ -87,7 +91,7 @@ class WorkflowPolizas(WorkflowBase):
                 "load_success": False
             }
 
-    async def _final_task(self, state: EtlBaseState) -> dict[str, Any]:
+    async def _final_task(self, state: EtlPolizasState) -> dict[str, Any]:
         return {}
 
     async def execute(self, data: DocumentContractState) -> EtlPolizasState:
