@@ -84,7 +84,26 @@ class BedRockTransformerDocument(TransformDocumentPort):
 
     # --- Tasaciones
     def llm_caller_tasaciones(self, context: str) -> EtlTasacionesState | None:
-        pass
+        return BedRockTransformerDocument.with_throttling_retry(self._llm_tasaciones_internal_chain, context)
+
+    def _llm_tasaciones_internal_chain(self, context: str) -> EtlTasacionesState:
+        tasacion_system_prompt = """Eres un experto obteniendo información de las tasaciones, para lo cual debes 
+        obtener información del nombre del perito (el cual por lo general lo encuentra como perito evaluador o perito 
+        y tambien sobre palabras de ing. o lic), la fecha de la tasación (por lo general cerca a la palabra fecha); 
+        el valor comercial en soles (puede estar alrededor de palabras como Valor comercial (VC) SOLES S/.) y el 
+        valor de realización en soles igual puede estar alrededor de palabras como Valor de realización (VR) SOLES 
+        S/; también debes obtener al propietario de la tasación por lo general esta alrededor de la palabra 
+        "propietario" o "propietaria" tus hallazgos los debes retornar en json de la siguiente forma: { 
+        "expert_warranty_name": "Indica el nombre del perito", "tasacion_date": "Indica la fecha de la tasación", 
+        "commercial_value": "Indica el valor comercial en soles ( PEN)", "realization_value": "Indica el valor de 
+        realización en soles (PEN)", "tasacion_owner": "Indica el nombre del propietario de la tasación" } ;"""
+        messages = [
+            ("system", f"{tasacion_system_prompt}"),
+            ("human", f"{context}")
+        ]
+        chain = self.bedrock_converse.with_structured_output(EtlTasacionesState)
+        results = chain.invoke(messages)
+        return EtlTasacionesState.model_validate(results)
 
     @staticmethod
     def with_throttling_retry(func: Callable[..., T], *args, max_retries=5, backoff_base=1.0, backoff_factor=2.0,

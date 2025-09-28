@@ -24,7 +24,7 @@ def get_factory() -> WorkflowOrchestator:
 
 @app.get("/start-etl")
 async def run_etl(wf: WorkflowOrchestator = Depends(get_factory)):
-    prefixes: list[PrefixEnum] = [PrefixEnum.inscripciones]
+    prefixes: list[PrefixEnum] = [PrefixEnum.polizas,PrefixEnum.inscripciones,PrefixEnum.tasaciones]
     for prefix in prefixes:
         app_logger.info(f"Ejecutando flow de: {prefix}")
         result = await wf.execute(prefix=prefix)

@@ -30,6 +30,7 @@ class DynamoLoaderDocument(LoaderDocumentPort):
     def save_metadata(self, document_type: str, data: list[EtlBaseState]) -> None:
         for d in data:
             metadata = d.model_dump(mode="json")
+            print("metadata", metadata)
             metadata["document_type"] = document_type
             item = {
                 "id": str(uuid.uuid4()),
