@@ -6,6 +6,9 @@ import anyio
 from application.ports.extractor_document_port import ExtractorDocumentPort
 from application.ports.loader_document_port import LoaderDocumentPort
 from application.ports.transform_document_port import TransformDocumentPort
+from application.ports.notification_port import NotificationPort
+
+
 from application.use_cases.workflows.workflow_base import WorkflowBase
 from domain.models.states.document_contract_state import DocumentContractState
 from domain.models.states.etl_base_state import EtlBaseState
@@ -89,16 +92,16 @@ class WorkflowInscripciones(WorkflowBase):
     def _final_task(self, state: EtlInscripcionesState) -> dict[str, Any]:
         return {}
 
-    async def execute(self, data: DocumentContractState) -> EtlInscripcionesState:
+    async def execute(self, data: DocumentContractState) -> bool:
         self.document_data = data
         state: EtlInscripcionesState = EtlInscripcionesState(
-            document_name=data.document_name,
+            record_id=data.record_id,
             period_year=data.period_year,
             period_month=data.period_month,
         )
         output_raw = await self._graph.ainvoke(state)
         output = EtlInscripcionesState.model_validate(output_raw)
-        return output
+        return output.transform_success == True and output.load_success == True and output.extract_success == True
 
     # -------------------------- Métodos complementarios al flujo
     async def _transform_unit(self, child: EtlInscripcionChild) -> EtlInscripcionChild | None:

@@ -51,7 +51,7 @@ class WorkflowService:
         to_send: list[EtlInscripcionChild] = []
         for i in inputs:
             item = EtlInscripcionChild(
-                document_name=state.document_name,
+                record_id=state.record_id,
                 period_month=WorkflowService.refine_month(state.period_month),
                 period_year=WorkflowService.refine_year(state.period_year),
                 extract_success=True,

@@ -9,7 +9,6 @@ from infrastructure.config.app_settings import AppSettings, get_app_settings
 
 
 class DynamoLoaderDocument(LoaderDocumentPort):
-
     def __init__(self):
         self.app_settings: AppSettings = get_app_settings()
         self.table: Table = self._get_configuration()
@@ -34,8 +33,10 @@ class DynamoLoaderDocument(LoaderDocumentPort):
             metadata["document_type"] = document_type
             item = {
                 "id": str(uuid.uuid4()),
-                "metadata": metadata
+                "metadata": metadata,
+                "supervisedRecordId": d.record_id
             }
+            print("item", item)
             self.table.put_item(Item=item)
 
 

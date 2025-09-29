@@ -46,7 +46,7 @@ class TextractExtractorDocument(ExtractorDocumentPort):
         if origin == "inscripciones":
             for p in per_page:
                 item = EtlBaseState(
-                    document_name=document_data.document_name,
+                    record_id=document_data.record_id,
                     extract_success=True,
                     transform_success=False,
                     load_success=False,
@@ -60,7 +60,7 @@ class TextractExtractorDocument(ExtractorDocumentPort):
             full_text = "\n\n".join(p.get("text", "") for p in per_page)
             # print("full text", full_text)
             item = EtlBaseState(
-                document_name=document_data.document_name,
+                record_id=document_data.record_id,
                 extract_success=True,
                 transform_success=False,
                 load_success=False,

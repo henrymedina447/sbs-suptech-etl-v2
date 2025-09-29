@@ -7,6 +7,7 @@ from langgraph.graph import StateGraph
 from application.ports.loader_document_port import LoaderDocumentPort
 from application.ports.transform_document_port import TransformDocumentPort
 from application.ports.extractor_document_port import ExtractorDocumentPort
+from application.ports.notification_port import NotificationPort
 from domain.models.states.etl_base_state import EtlBaseState
 
 

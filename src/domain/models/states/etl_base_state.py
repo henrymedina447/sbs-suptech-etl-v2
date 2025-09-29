@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 
 
 class EtlBaseState(BaseModel):
-    document_name: str = Field(description="Nombre del documento")
+    record_id: str = Field(description="ID del documento")
     document_content_total: str | None = Field(description="Contenido total del documento", default=None)
     document_content_llm: str | None = Field(description="Contenido específico a enviar el llm", default=None)
     period_month: str | None = Field(description="Contiene el mes de donde pertenece el archivo", default=None)
