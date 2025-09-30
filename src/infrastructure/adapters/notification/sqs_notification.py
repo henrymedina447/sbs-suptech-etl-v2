@@ -9,6 +9,7 @@ from infrastructure.config.app_settings import AppSettings, get_app_settings
 
 from domain.models.notification import Notification
 
+
 class SqsNotification(NotificationPort):
     def __init__(self):
         self.app_settings: AppSettings = get_app_settings()
@@ -30,7 +31,7 @@ class SqsNotification(NotificationPort):
             {"Id": notification.id, "MessageBody": notification.message.model_dump_json(by_alias=True)}
             for notification in notifications
         ]
-        
+
         print("sqs_messages", sqs_messages)
         print("queue_url", self.app_settings.sqs_settings.queue_url)
         self.queue.send_message_batch(

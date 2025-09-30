@@ -1,5 +1,7 @@
 import os
 from functools import lru_cache
+from typing import Literal
+
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, ValidationError
 
@@ -8,6 +10,18 @@ path_root = os.path.dirname(
 )
 dotenv_path = os.path.join(path_root, ".env")
 load_dotenv(dotenv_path, override=True)
+
+
+class KafkaSettings(BaseModel):
+    bootstrap_servers: str = Field(description="")
+    topic: str = Field(description="Tópico del mensaje a escuchar")
+    group_id: str = Field(description="Es el ID que identifica quien lo está consumiendo")
+    security_protocol: Literal["PLAINTEXT", "SSL", "SASL_PLAINTEXT", "SASL_SSL"] = Field(
+        description="Indica el protocolo de seguridad",
+        default="PLAINTEXT")
+    sasl_mechanism: str | None = Field(description="", default=None)
+    sasl_username: str | None = Field(description="", default=None)
+    sasl_password: str | None = Field(description="", default=None)
 
 
 class AwsSettings(BaseModel):
@@ -43,6 +57,8 @@ class AppSettings(BaseModel):
     sqs_settings: SqsSettings = Field(
         description="Todas las configuraciones de las tablas"
     )
+    kafka_settings: KafkaSettings = Field(description="Todas las configuraciones asociadas al kafka")
+
 
     @classmethod
     def load(cls) -> "AppSettings":
@@ -63,6 +79,15 @@ class AppSettings(BaseModel):
                 ),
                 sqs_settings=SqsSettings(
                     queue_url=os.getenv("NOTIFICATION_QUEUE_URL"),
+                ),
+                kafka_settings=KafkaSettings(
+                    bootstrap_servers=os.getenv("AWS_KAFKA_BOOTSTRAP_SERVERS"),
+                    topic=os.getenv("AWS_KAFKA_TOPIC"),
+                    group_id=os.getenv("AWS_KAFKA_GROUP_ID"),
+                    security_protocol="PLAINTEXT",
+                    sasl_mechanism=None,
+                    sasl_username=None,
+                    sasl_password=None
                 ),
             )
         except (KeyError, ValidationError) as e:
