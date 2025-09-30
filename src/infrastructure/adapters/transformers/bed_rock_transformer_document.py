@@ -94,9 +94,10 @@ class BedRockTransformerDocument(TransformDocumentPort):
         valor de realización en soles igual puede estar alrededor de palabras como Valor de realización (VR) SOLES 
         S/; también debes obtener al propietario de la tasación por lo general esta alrededor de la palabra 
         "propietario" o "propietaria" tus hallazgos los debes retornar en json de la siguiente forma: { 
-        "expert_warranty_name": "Indica el nombre del perito", "tasacion_date": "Indica la fecha de la tasación", 
-        "commercial_value": "Indica el valor comercial en soles ( PEN)", "realization_value": "Indica el valor de 
-        realización en soles (PEN)", "tasacion_owner": "Indica el nombre del propietario de la tasación" } ;"""
+        "expert_warranty_name": "Indica el nombre del perito", "tasacion_date": "Indica la fecha de la tasación",
+        retornalo en formato dd/mm/aaaa", "commercial_value": "Indica el valor comercial en soles ( PEN)", 
+        "realization_value": "Indica el valor de realización en soles (PEN)", "tasacion_owner": "Indica el nombre del 
+        propietario de la tasación" } ;"""
         messages = [
             ("system", f"{tasacion_system_prompt}"),
             ("human", f"{context}")

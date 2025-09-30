@@ -68,7 +68,7 @@ class WorkflowTasaciones(WorkflowBase):
                 return {"transform_success": False}
             return {
                 "transform_success": True,
-                "expert_warranty": item.expert_warranty_name,
+                "expert_warranty_name": item.expert_warranty_name,
                 "tasacion_date": WorkflowService.refine_dates(item.tasacion_date),
                 "commercial_value": item.commercial_value,
                 "realization_value": item.realization_value,
