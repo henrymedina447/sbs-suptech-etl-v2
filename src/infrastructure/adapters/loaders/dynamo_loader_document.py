@@ -3,12 +3,12 @@ import uuid
 import boto3
 from botocore.config import Config
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
-from application.ports.loader_document_port import LoaderDocumentPort
+from application.ports.loader_metadata_port import LoaderMetadataPort
 from domain.models.states.etl_base_state import EtlBaseState
 from infrastructure.config.app_settings import AppSettings, get_app_settings
 
 
-class DynamoLoaderDocument(LoaderDocumentPort):
+class DynamoLoaderMetadata(LoaderMetadataPort):
     def __init__(self):
         self.app_settings: AppSettings = get_app_settings()
         self.table: Table = self._get_configuration()
@@ -28,15 +28,13 @@ class DynamoLoaderDocument(LoaderDocumentPort):
 
     def save_metadata(self, document_type: str, data: list[EtlBaseState]) -> None:
         for d in data:
-            metadata = d.model_dump(mode="json")
-            print("metadata", metadata)
+            metadata = d.model_dump(mode="json", exclude_none=True)
             metadata["document_type"] = document_type
             item = {
                 "id": str(uuid.uuid4()),
                 "metadata": metadata,
                 "supervisedRecordId": d.record_id
             }
-            print("item", item)
             self.table.put_item(Item=item)
 
 

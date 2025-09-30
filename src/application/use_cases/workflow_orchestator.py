@@ -6,6 +6,7 @@ from langgraph.constants import START, END
 from langgraph.graph import StateGraph
 
 from application.ports.extractor_document_port import ExtractorDocumentPort
+from application.ports.loader_metadata_port import LoaderMetadataPort
 from application.ports.loader_document_port import LoaderDocumentPort
 from application.ports.transform_document_port import TransformDocumentPort
 from application.ports.notification_port import NotificationPort
@@ -30,23 +31,25 @@ class WorkflowOrchestator:
         self,
         extractor: ExtractorDocumentPort,
         transformer: TransformDocumentPort,
-        loader: LoaderDocumentPort,
+        metadata_loader: LoaderMetadataPort,
+        document_loader: LoaderDocumentPort,
         notification: NotificationPort,
     ):
         self.logger = logging.getLogger("app.workflows")
         self._extractor = extractor
         self._transformer = transformer
-        self._loader = loader
+        self._metadata_loader = metadata_loader
+        self._document_loader = document_loader
         self._notification = notification
 
         self.polizas_wf = WorkflowPolizas(
-            self._extractor, self._transformer, self._loader
+            self._extractor, self._transformer, self._metadata_loader, self._document_loader
         )
         self.inscripciones_wf = WorkflowInscripciones(
-            self._extractor, self._transformer, self._loader
+            self._extractor, self._transformer, self._metadata_loader, self._document_loader
         )
         self.tasaciones_wf = WorkflowTasaciones(
-            self._extractor, self._transformer, self._loader
+            self._extractor, self._transformer, self._metadata_loader, self._document_loader
         )
         self.app_settings: AppSettings = get_app_settings()
         self._graph = self._build()

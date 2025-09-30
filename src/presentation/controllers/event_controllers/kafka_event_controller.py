@@ -58,25 +58,38 @@ class KafkaEventController:
         c = self._consumer
         try:
             while not self._stopping.is_set():
-                batches = await c.getmany(timeout_ms=1000, max_records=200)
+                batches = await c.getmany(timeout_ms=1000, max_records=10)
                 tasks = []
                 for _tp, msgs in batches.items():
+                    document_requests: list[ProcessDocumentRequest] = []
                     for m in msgs:
-                        tasks.append(asyncio.create_task(self._handle(m.value)))
+                        text = m.value.decode("utf-8", errors="ignore")
+                        data = json.loads(text) if text else {}
+                        print(data)
+                        process_document: ProcessDocumentRequest = (
+                            ProcessDocumentRequest.model_validate(data, by_alias=True)
+                        )
+                        document_requests.append(process_document)
+                    tasks.append(
+                        asyncio.create_task(
+                            self._handle(document_requests=document_requests)
+                        )
+                    )
                 if tasks:
                     await asyncio.gather(*tasks, return_exceptions=True)
         finally:
             await c.stop()
 
-    async def _handle(self, value: bytes):
+    async def _handle(self, document_requests: list[ProcessDocumentRequest]) -> None:
+
+        app_logger.info(f"Procesando mensajes", document_requests)
+
         async with self._sem:
             try:
-                text = value.decode("utf-8", errors="ignore")
-                data = json.loads(text) if text else {}
-                print("data", data)
-                process_document: ProcessDocumentRequest = ProcessDocumentRequest.model_validate(data)
-                documents_by_type: dict[DocumentType, list[DocumentContractState]] = dict()
-                for item in process_document.documents:
+                documents_by_type: dict[DocumentType, list[DocumentContractState]] = (
+                    dict()
+                )
+                for item in document_requests:
                     document_contract_state = DocumentContractState(
                         record_id=item.record_id,
                         parent_id=item.parent_id,
@@ -87,13 +100,22 @@ class KafkaEventController:
                         period_year=item.period_year,
                     )
                     if item.document_type not in documents_by_type:
-                        documents_by_type[item.document_type] = [document_contract_state]
+                        documents_by_type[item.document_type] = [
+                            document_contract_state
+                        ]
                     else:
-                        documents_by_type[item.document_type].append(document_contract_state)
+                        documents_by_type[item.document_type].append(
+                            document_contract_state
+                        )
 
+                print(documents_by_type)
                 for [document_type, documents] in documents_by_type.items():
-                    app_logger.info(f"Ejecutando flow de: {document_type} - {len(documents)}")
-                    result = await self._wf.execute(document_type=document_type, documents=documents)
+                    app_logger.info(
+                        f"Ejecutando flow de: {document_type} - {len(documents)}"
+                    )
+                    result = await self._wf.execute(
+                        document_type=document_type, documents=documents
+                    )
                 return {"status": "success"}
 
             except ValidationError as e:

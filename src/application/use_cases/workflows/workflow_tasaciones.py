@@ -4,6 +4,7 @@ from typing import Any
 import anyio
 
 from application.ports.extractor_document_port import ExtractorDocumentPort
+from application.ports.loader_metadata_port import LoaderMetadataPort
 from application.ports.loader_document_port import LoaderDocumentPort
 from application.ports.transform_document_port import TransformDocumentPort
 from application.ports.notification_port import NotificationPort
@@ -23,9 +24,10 @@ class WorkflowTasaciones(WorkflowBase):
         self,
         extractor: ExtractorDocumentPort,
         transformer: TransformDocumentPort,
-        loader: LoaderDocumentPort,
+        metadata_loader: LoaderMetadataPort,
+        document_loader: LoaderDocumentPort,
     ):
-        super().__init__(extractor, transformer, loader)
+        super().__init__(extractor, transformer, metadata_loader, document_loader)
         self.logger = logging.getLogger("app.workflows")
         self.document_data: DocumentContractState | None = None
 
@@ -84,10 +86,22 @@ class WorkflowTasaciones(WorkflowBase):
             transform_success = state.transform_success
             if not transform_success:
                 return {}
-            print("state en load", state)
+            
+            text_key = f"txt/{state.record_id}.txt"
             await anyio.to_thread.run_sync(
-                self._loader.save_metadata, "tasaciones", [state]
+                self._document_loader.save_document,
+                text_key,
+                state.document_content_total.encode("utf-8"),
             )
+            state.document_content_total = None
+            state.document_content_llm = None
+            
+            print("state en load", state)
+
+            await anyio.to_thread.run_sync(
+                self._metadata_loader.save_metadata, "tasaciones", [state]
+            )
+            
             return {"load_success": True}
         except Exception as e:
             self.logger.info(f"Error en carga de tasaciones: {str(e)}")

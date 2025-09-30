@@ -4,6 +4,7 @@ from typing import Any
 from langgraph.constants import START, END
 from langgraph.graph import StateGraph
 
+from application.ports.loader_metadata_port import LoaderMetadataPort
 from application.ports.loader_document_port import LoaderDocumentPort
 from application.ports.transform_document_port import TransformDocumentPort
 from application.ports.extractor_document_port import ExtractorDocumentPort
@@ -15,11 +16,13 @@ class WorkflowBase(ABC):
     def __init__(self,
                  extractor: ExtractorDocumentPort,
                  transformer: TransformDocumentPort,
-                 loader: LoaderDocumentPort
+                 metadata_loader: LoaderMetadataPort,
+                 document_loader: LoaderDocumentPort
                  ):
         self._extractor = extractor
         self._transformer = transformer
-        self._loader = loader
+        self._metadata_loader = metadata_loader
+        self._document_loader = document_loader
         self._graph = self._build_graph()
 
     @abstractmethod

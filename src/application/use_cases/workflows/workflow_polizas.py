@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from application.ports.loader_metadata_port import LoaderMetadataPort
 from application.ports.loader_document_port import LoaderDocumentPort
 from application.ports.transform_document_port import TransformDocumentPort
 from application.ports.extractor_document_port import ExtractorDocumentPort
@@ -21,12 +22,12 @@ class WorkflowPolizas(WorkflowBase):
         self,
         extractor: ExtractorDocumentPort,
         transformer: TransformDocumentPort,
-        loader: LoaderDocumentPort
+        metadata_loader: LoaderMetadataPort,
+        document_loader: LoaderDocumentPort,
     ):
-        super().__init__(extractor, transformer, loader)
+        super().__init__(extractor, transformer, metadata_loader, document_loader)
         self.logger = logging.getLogger("app.workflows")
         self.document_data: DocumentContractState | None = None
-        
 
     async def _extract(self, state: EtlPolizasState) -> dict[str, Any]:
         try:
@@ -83,9 +84,20 @@ class WorkflowPolizas(WorkflowBase):
             transform_success = state.transform_success
             if not transform_success:
                 return {}
+
+            text_key = f"txt/{state.record_id}.txt"
             await anyio.to_thread.run_sync(
-                self._loader.save_metadata, "polizas", [state]
+                self._document_loader.save_document,
+                text_key,
+                state.document_content_total.encode("utf-8"),
             )
+            state.document_content_total = None
+            state.document_content_llm = None
+
+            await anyio.to_thread.run_sync(
+                self._metadata_loader.save_metadata, "polizas", [state]
+            )
+
             return {"load_success": True}
         except Exception as e:
             self.logger.info(f"Error en carga de pólizas: {str(e)}")
@@ -99,4 +111,8 @@ class WorkflowPolizas(WorkflowBase):
         state: EtlPolizasState = EtlPolizasState(record_id=data.record_id)
         output_raw = await self._graph.ainvoke(state)
         output = EtlPolizasState.model_validate(output_raw)
-        return output.transform_success == True and output.load_success == True and output.extract_success == True
+        return (
+            output.transform_success == True
+            and output.load_success == True
+            and output.extract_success == True
+        )
