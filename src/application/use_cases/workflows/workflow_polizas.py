@@ -106,7 +106,7 @@ class WorkflowPolizas(WorkflowBase):
     async def _final_task(self, state: EtlPolizasState) -> dict[str, Any]:
         return {}
 
-    async def execute(self, data: DocumentContractState) -> EtlPolizasState:
+    async def execute(self, data: DocumentContractState) -> bool:
         self.document_data = data
         state: EtlPolizasState = EtlPolizasState(record_id=data.record_id)
         output_raw = await self._graph.ainvoke(state)
