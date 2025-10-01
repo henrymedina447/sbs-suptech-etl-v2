@@ -11,30 +11,32 @@ from infrastructure.config.app_settings import AppSettings, get_app_settings
 class DynamoLoaderMetadata(LoaderMetadataPort):
     def __init__(self):
         self.app_settings: AppSettings = get_app_settings()
-        self.table: Table = self._get_configuration()
+        dynamo_resource = self._get_configuration()
+        self.si_table: Table = dynamo_resource.Table(
+            self.app_settings.table_settings.si_table
+        )
 
     def _get_configuration(self) -> Table:
         _cfg = Config(
             retries={"max_attempts": 10, "mode": "standard"},
             connect_timeout=3,
-            read_timeout=5
+            read_timeout=5,
         )
         dynamo_resource: DynamoDBServiceResource = boto3.resource(
-            "dynamodb",
-            config=_cfg,
-            region_name=self.app_settings.aws_settings.region
+            "dynamodb", config=_cfg, region_name=self.app_settings.aws_settings.region
         )
-        return dynamo_resource.Table(self.app_settings.table_settings.si_table)
+        return dynamo_resource
 
     def save_metadata(self, document_type: str, data: list[EtlBaseState]) -> None:
         for d in data:
             metadata = d.model_dump(mode="json", exclude_none=True)
             metadata["document_type"] = document_type
+            for [key, value] in metadata.items():
+                metadata[key] = str(value)
+
             item = {
                 "id": str(uuid.uuid4()),
                 "metadata": metadata,
-                "supervisedRecordId": d.record_id
+                "supervisoryRecordId": d.record_id,
             }
-            self.table.put_item(Item=item)
-
-
+            self.si_table.put_item(Item=item)

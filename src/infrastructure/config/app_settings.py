@@ -15,10 +15,12 @@ load_dotenv(dotenv_path, override=True)
 class KafkaSettings(BaseModel):
     bootstrap_servers: str = Field(description="")
     topic: str = Field(description="Tópico del mensaje a escuchar")
-    group_id: str = Field(description="Es el ID que identifica quien lo está consumiendo")
-    security_protocol: Literal["PLAINTEXT", "SSL", "SASL_PLAINTEXT", "SASL_SSL"] = Field(
-        description="Indica el protocolo de seguridad",
-        default="PLAINTEXT")
+    group_id: str = Field(
+        description="Es el ID que identifica quien lo está consumiendo"
+    )
+    security_protocol: Literal["PLAINTEXT", "SSL", "SASL_PLAINTEXT", "SASL_SSL"] = (
+        Field(description="Indica el protocolo de seguridad", default="PLAINTEXT")
+    )
     sasl_mechanism: str | None = Field(description="", default=None)
     sasl_username: str | None = Field(description="", default=None)
     sasl_password: str | None = Field(description="", default=None)
@@ -57,8 +59,9 @@ class AppSettings(BaseModel):
     sqs_settings: SqsSettings = Field(
         description="Todas las configuraciones de las tablas"
     )
-    kafka_settings: KafkaSettings = Field(description="Todas las configuraciones asociadas al kafka")
-
+    kafka_settings: KafkaSettings = Field(
+        description="Todas las configuraciones asociadas al kafka"
+    )
 
     @classmethod
     def load(cls) -> "AppSettings":
@@ -87,7 +90,7 @@ class AppSettings(BaseModel):
                     security_protocol="PLAINTEXT",
                     sasl_mechanism=None,
                     sasl_username=None,
-                    sasl_password=None
+                    sasl_password=None,
                 ),
             )
         except (KeyError, ValidationError) as e:
