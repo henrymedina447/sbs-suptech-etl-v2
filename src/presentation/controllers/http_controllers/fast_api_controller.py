@@ -20,8 +20,8 @@ def get_factory() -> WorkflowOrchestator:
 
 
 async def execute_workflows(
-        wf: WorkflowOrchestator,
-        documents_by_type: dict[DocumentType, list[DocumentContractState]],
+    wf: WorkflowOrchestator,
+    documents_by_type: dict[DocumentType, list[DocumentContractState]],
 ):
     for [document_type, documents] in documents_by_type.items():
         app_logger.info(f"Ejecutando flow de: {document_type} - {len(documents)}")
@@ -30,11 +30,12 @@ async def execute_workflows(
 
 @app.post("/start-etl")
 async def run_etl(
-        process_document: ProcessDocumentRequest,
-        wf: WorkflowOrchestator = Depends(get_factory),
+    process_document: ProcessDocumentRequest,
+    wf: WorkflowOrchestator = Depends(get_factory),
 ):
     documents_by_type: dict[DocumentType, list[DocumentContractState]] = dict()
     for item in process_document.documents:
+        app_logger.info(f"Procesando documento", item)
         document_contract_state = DocumentContractState(
             record_id=item.record_id,
             parent_id=item.parent_id,

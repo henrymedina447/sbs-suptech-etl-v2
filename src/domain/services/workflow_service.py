@@ -52,8 +52,8 @@ class WorkflowService:
         for i in inputs:
             item = EtlInscripcionChild(
                 record_id=state.record_id,
-                period_month=WorkflowService.refine_month(state.period_month),
-                period_year=WorkflowService.refine_year(state.period_year),
+                period_month=state.period_month,
+                period_year=state.period_year,
                 extract_success=True,
                 document_content_llm=i.document_content_llm,
                 document_content_total=i.document_content_total

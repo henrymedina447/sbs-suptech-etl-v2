@@ -41,12 +41,8 @@ class WorkflowPolizas(WorkflowBase):
             return {
                 "extract_success": True,
                 "record_id": self.document_data.record_id,
-                "period_month": WorkflowService.refine_month(
-                    self.document_data.period_month
-                ),
-                "period_year": WorkflowService.refine_year(
-                    self.document_data.period_year
-                ),
+                "period_month": self.document_data.period_month,
+                "period_year": self.document_data.period_year,
                 "document_content_total": item.document_content_total,
                 "document_content_llm": item.document_content_llm,
             }
@@ -82,6 +78,7 @@ class WorkflowPolizas(WorkflowBase):
         try:
             self.logger.info("Iniciando el proceso de carga de pólizas")
             transform_success = state.transform_success
+            
             if not transform_success:
                 return {}
 
