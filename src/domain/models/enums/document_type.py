@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class DocumentType(Enum):
     POLICY = "POLICY"
     APPRAISAL = "APPRAISAL"
