@@ -31,7 +31,7 @@ class AwsSettings(BaseModel):
         description="es el access key de la cuenta obtenido en el IAM"
     )
     secret: str | None= Field(description="es el secret key de la cuenta obtenido en el IAM")
-    region: str = Field(description="La región de la aplicación")
+    region: str | None = Field(description="La región de la aplicación")
 
 
 class S3Settings(BaseModel):
