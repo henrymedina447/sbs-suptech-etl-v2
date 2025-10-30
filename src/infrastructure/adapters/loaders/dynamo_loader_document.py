@@ -1,11 +1,14 @@
 import uuid
 
 import boto3
+
+from boto3.dynamodb.conditions import Key, Attr
 from botocore.config import Config
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from application.ports.loader_metadata_port import LoaderMetadataPort
 from domain.models.states.etl_base_state import EtlBaseState
 from infrastructure.config.app_settings import AppSettings, get_app_settings
+from typing import Any
 
 
 class DynamoLoaderMetadata(LoaderMetadataPort):
@@ -28,15 +31,31 @@ class DynamoLoaderMetadata(LoaderMetadataPort):
         return dynamo_resource
 
     def save_metadata(self, document_type: str, data: list[EtlBaseState]) -> None:
-        for d in data:
-            metadata = d.model_dump(mode="json", exclude_none=True)
-            metadata["document_type"] = document_type
-            for [key, value] in metadata.items():
-                metadata[key] = str(value)
 
-            item = {
-                "id": str(uuid.uuid4()),
-                "metadata": metadata,
-                "supervisoryRecordId": d.record_id,
-            }
-            self.si_table.put_item(Item=item)
+        for d in data:
+            print(f"Saving metadata for {document_type}", d)
+
+            query_output = self.si_table.query(
+                KeyConditionExpression=Key("supervisoryRecordId").eq(d.record_id),
+                IndexName="supervisoryRecordId-index",
+                Limit=1,
+            )
+            metadata = query_output["Items"][0]
+
+            new_metadata = d.model_dump(mode="json", exclude_none=True)
+            new_metadata["document_type"] = document_type
+            for [key, value] in new_metadata.items():
+                new_metadata[key] = str(value)
+
+            metadata.update(new_metadata)
+
+            self.si_table.update_item(
+                Key={
+                    "id": metadata["id"],
+                },
+                UpdateExpression="set metadata = :metadata",
+                ExpressionAttributeValues={
+                    ":metadata": metadata,
+                },
+                ReturnValues="UPDATED_NEW",
+            )
