@@ -40,14 +40,17 @@ class DynamoLoaderMetadata(LoaderMetadataPort):
                 IndexName="supervisoryRecordId-index",
                 Limit=1,
             )
-            metadata = query_output["Items"][0]
+            existing_metadata = query_output["Items"][0]
 
-            new_metadata = d.model_dump(mode="json", exclude_none=True)
-            new_metadata["document_type"] = document_type
-            for [key, value] in new_metadata.items():
-                new_metadata[key] = str(value)
-
-            metadata.update(new_metadata)
+            raw_data = d.model_dump(mode="json", exclude_none=True)
+            metadata = {
+                "period_year": raw_data["period_year"],
+                "period_month": raw_data["period_month"],
+                "file_name": raw_data["file_name"],
+            }
+            
+            metadata.update(raw_data["metadata"])
+            metadata.update(existing_metadata["metadata"])
 
             self.si_table.update_item(
                 Key={
